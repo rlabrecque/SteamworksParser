@@ -418,7 +418,9 @@ class Parser:
 
         comments = self.consume_comments(s)
 
-        # Currently skips one unfortunate function definition where the first arg on the new line starts with const
+        # Currently skips one unfortunate function definition where the first arg on the new line starts with const. Like so:
+        # void func(void arg1,
+        #    const arg2) = 0;
         if "=" not in s.linesplit:
             return
 
@@ -435,7 +437,10 @@ class Parser:
             if s.line.endswith("};"):
                 # Hack to get comments between the last field and }; :(
                 s.enum.endcomments = self.consume_comments(s)
-                s.f.enums.append(s.enum)
+                # Don't append unnamed (constant) enums
+                if s.enum.name is not None:
+                    s.f.enums.append(s.enum)
+
                 s.enum = None
                 return
 
@@ -469,33 +474,44 @@ class Parser:
             return
 
         if len(s.linesplit) == 1:
-            # TODO unnamed Constants like:
-            '''
-            enum {
+            s.enum = Enum(None, comments)
+            # unnamed Constants like:
+            '''enum {
                 k_name1 = value,
                 k_name2 = value,
-            };
-            '''
+            };'''
             return
 
         s.enum = Enum(s.linesplit[1], comments)
 
     def parse_enumfields(self, s):
         result = re.match("^(\w+,?)([ \t]*)=?([ \t]*)(.*)$", s.line)
+        comments = self.consume_comments(s)
+
+        # HACK: This is a hack for multiline fields :(
+        if s.line.endswith("="):
+            value = "="
+        else:
+            value = result.group(4)
+
+        # Nameless Enums are actually just constants
+        if s.enum.name is None:
+            if s.enum.c:
+                comments.precomments = s.enum.c.precomments
+                s.enum.c = None
+            constant = Constant(result.group(1), value.rstrip(","), "int", comments)
+            s.f.constants.append(constant)
+            return
 
         field = EnumField()
         field.name = result.group(1)
 
-        if result.group(4):
+        if value:
             field.prespacing = result.group(2)
             field.postspacing = result.group(3)
-            field.value = result.group(4)
+            field.value = value
 
-        # HACK: This is a hack for multiline fields :(
-        if s.line.endswith("="):
-            field.value = "="
-
-        field.c = self.consume_comments(s)
+        field.c = comments
         s.enum.fields.append(field)
 
     def parse_structs(self, s):
