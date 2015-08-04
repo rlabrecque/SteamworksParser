@@ -37,6 +37,7 @@ g_GameServerInterfaces = (
     'isteamhttp.h',
     'isteaminventory.h',
     'isteamnetworking.h',
+    'isteamugc.h',
     'isteamutils.h',
 )
 
