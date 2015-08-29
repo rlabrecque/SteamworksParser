@@ -406,6 +406,7 @@ class Parser:
         if typedef.name.startswith("*"):
             typedef.type += " *"
             typedef.name = typedef.name[1:]
+        typedef.filename = s.f.name
 
         self.typedefs.append(typedef)
 
