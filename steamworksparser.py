@@ -18,6 +18,8 @@ g_SkippedLines = (
     "CLANG_ATTR",
     "END_CALLBACK_INTERNAL_END()",
     "public:",
+    "private:",
+    "protected:",
     "SteamCallback_t",
 )
 
@@ -256,8 +258,9 @@ class Parser:
         multilineCloserPos = s.line.find("*/")
         bHasClosing = (multilineCloserPos != -1)
 
+        multipleQuoteblocks = False
         if s.line.count("/*") > 1 or s.line.count("*/") > 1:
-            printUnhandled("More than 1 of the same type of multiline comment operator on a single line.", s)
+            multipleQuoteblocks = True
 
         # TODO - Ugly Code that works well
         if bHasOpening:
@@ -280,6 +283,9 @@ class Parser:
 
         if strComment is not None:
             s.comments.append(strComment.rstrip())
+
+        if multipleQuoteblocks:
+            self.parse_comments_multiline(s)
 
     def parse_comments_singleline(self, s):
         if s.linecomment is not None:
