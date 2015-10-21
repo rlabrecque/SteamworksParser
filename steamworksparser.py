@@ -21,6 +21,7 @@ g_SkippedLines = (
     "private:",
     "protected:",
     "SteamCallback_t",
+    "_STEAM_CALLBACK_",
 )
 
 g_ArgAttribs = (
