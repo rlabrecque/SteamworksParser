@@ -32,6 +32,7 @@ g_ArgAttribs = (
     "OUT_ARRAY_CALL",
     "OUT_ARRAY_COUNT",
     "OUT_BUFFER_COUNT",
+    "OUT_STRING",
     "OUT_STRING_COUNT",
     "OUT_STRUCT",
 )
@@ -63,12 +64,17 @@ class Comment:
         self.rawlinecomment = rawlinecomment
         self.linecomment = linecomment
 
+class ArgAttribute:
+    def __init__(self):
+        self.name = ""
+        self.value = ""
+
 class Arg:
     def __init__(self):
         self.name = ""
         self.type = ""
         self.default = None
-        self.attribute = None
+        self.attribute = None  # ArgAttribute
 
 
 class Function:
@@ -670,15 +676,17 @@ class Parser:
                         continue
 
                 if s.funcState == 2:  # Args
-                    # Strip clang attributes, we really should be doing this with them in a list and looping over them.
+                    # Strip clang attributes
                     bIsAttrib = False
                     for a in g_ArgAttribs:
                         if token.startswith(a):
+                            attr = ArgAttribute()
                             bIsAttrib = True
                             break
                     if bIsAttrib:
-                        attr = token[:token.index("(")]
+                        attr.name = token[:token.index("(")]
                         if token.endswith(")"):
+                            attr.value = token[token.index("(")+1:token.index(")")]
                             continue
                         s.funcState = 4
                         continue
@@ -764,6 +772,7 @@ class Parser:
                     continue
 
                 if s.funcState == 4:  # ATTRIBS
+                    attr.value += token.rstrip(")")
                     if token.endswith(")"):
                         s.funcState = 2
                     continue
