@@ -97,6 +97,7 @@ class Function:
         self.comments = []
         self.linecomment = ""
         self.attributes = []  # FunctionAttribute
+        self.private = False;
 
 class Interface:
     def __init__(self):
@@ -650,6 +651,13 @@ class Parser:
 
     def parse_interface_functions(self, s):
         self.parse_interface_function_atrributes(s)
+
+        private = False
+        if s.line.startswith("STEAM_PRIVATE_API"):
+            s.line = s.line[s.line.index("(")+1:s.line.rindex(")")].strip()
+            s.linesplit = s.linesplit[1:-1]
+            private = True
+
         if s.line.startswith("virtual") or s.function:
             if '~' in s.line:  # Skip destructor
                 return
@@ -662,6 +670,7 @@ class Parser:
                     s.function.ifstatements = s.ifstatements[-1]
                 s.function.comments = s.comments
                 s.function.linecomment = s.linecomment
+                s.function.private = private
                 s.function.attributes = s.functionAttributes
                 s.functionAttributes = []
                 self.consume_comments(s)
