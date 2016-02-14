@@ -24,6 +24,13 @@ g_SkippedLines = (
     "_STEAM_CALLBACK_",
 )
 
+g_FuncAttribs = ( 
+    "METHOD_DESC",
+    "IGNOREATTR",
+    "CALL_RESULT",
+    "CALL_BACK",
+)
+
 g_ArgAttribs = (
     "ARRAY_COUNT",
     "ARRAY_COUNT_D",
@@ -76,6 +83,10 @@ class Arg:
         self.default = None
         self.attribute = None  # ArgAttribute
 
+class FunctionAttribute:
+    def __init__(self):
+        self.name = ""
+        self.value = ""
 
 class Function:
     def __init__(self):
@@ -85,7 +96,7 @@ class Function:
         self.ifstatements = []
         self.comments = []
         self.linecomment = ""
-
+        self.attributes = []  # FunctionAttribute
 
 class Interface:
     def __init__(self):
@@ -184,7 +195,7 @@ class ParserState:
         self.bInMultilineComment = False
         self.bInMultilineMacro = False
         self.callbackid = None
-
+        self.functionAttributes = [] # FunctionAttribute
 
 class Parser:
     files = None
@@ -629,7 +640,16 @@ class Parser:
         if s.interface:
             self.parse_interface_functions(s)
 
+    def parse_interface_function_atrributes(self, s):
+        for a in g_FuncAttribs:
+            if s.line.startswith(a):
+                attr = FunctionAttribute()
+                attr.name = s.line[:s.line.index("(")]
+                attr.value = s.line[s.line.index("(")+1:s.line.rindex(")")].strip()
+                s.functionAttributes.append(attr)
+
     def parse_interface_functions(self, s):
+        self.parse_interface_function_atrributes(s)
         if s.line.startswith("virtual") or s.function:
             if '~' in s.line:  # Skip destructor
                 return
@@ -642,6 +662,8 @@ class Parser:
                     s.function.ifstatements = s.ifstatements[-1]
                 s.function.comments = s.comments
                 s.function.linecomment = s.linecomment
+                s.function.attributes = s.functionAttributes
+                s.functionAttributes = []
                 self.consume_comments(s)
 
             linesplit_iter = iter(enumerate(s.linesplit))
