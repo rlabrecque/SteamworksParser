@@ -13,14 +13,18 @@ g_SkippedFiles = (
 )
 
 g_SkippedLines = (
-    "#pragma diag_suppress",
-    "#pragma warning",
+    #isteamclient.h
+    "#define END_CALLBACK_INTERNAL_END()",
+    "#define END_DEFINE_CALLBACK_0()",
+    "SteamCallback_t",
+
+    # steamtypes.h
     "CLANG_ATTR",
-    "END_CALLBACK_INTERNAL_END()",
+
+    # Multiple
     "public:",
     "private:",
     "protected:",
-    "SteamCallback_t",
     "_STEAM_CALLBACK_",
 )
 
@@ -353,14 +357,6 @@ class Parser:
         if not s.line.startswith("#"):
             return
 
-        if s.line == "#pragma once":
-            pass
-        elif s.line.startswith("#error"):
-            pass
-        elif s.line.startswith("#warning"):
-            pass
-        elif s.line.startswith("#elif"):
-            pass
         elif s.line.startswith("#else"):
             previf = s.ifstatements[-1]
             s.ifstatements.pop()
@@ -397,6 +393,16 @@ class Parser:
                 s.packsize = int(s.linesplit[3])
             elif s.linesplit[2] == "pop":
                 s.packsize = None
+        elif s.line.startswith("#pragma"):
+            pass
+        elif s.line.startswith("#error"):
+            pass
+        elif s.line.startswith("#warning"):
+            pass
+        elif s.line.startswith("#elif"):
+            pass
+        elif s.line.startswith("#undef"):
+            pass
         else:
             printUnhandled("Preprocessor", s)
 
