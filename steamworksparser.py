@@ -76,9 +76,9 @@ class Comment:
         self.linecomment = linecomment
 
 class ArgAttribute:
-    def __init__(self):
-        self.name = ""
-        self.value = ""
+    def __init__(self, name="", value=""):
+        self.name = name
+        self.value = value
 
 class Arg:
     def __init__(self):
