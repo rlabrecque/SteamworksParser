@@ -216,7 +216,7 @@ class Parser:
         for f in self.files:
             s = ParserState(f)
             filepath = os.path.join(folder, f.name)
-            with open(filepath, 'r') as infile:
+            with open(filepath, 'r', encoding="latin-1") as infile:
                 s.lines = infile.readlines()
 
                 if s.lines[0][:3] == codecs.BOM_UTF8:
