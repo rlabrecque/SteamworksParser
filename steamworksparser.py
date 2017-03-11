@@ -28,7 +28,7 @@ g_SkippedLines = (
     "_STEAM_CALLBACK_",
 )
 
-g_FuncAttribs = ( 
+g_FuncAttribs = (
     "METHOD_DESC",
     "IGNOREATTR",
     "CALL_RESULT",
@@ -155,11 +155,11 @@ class StructField:
         self.c = comments  # Comment
 
 class Typedef:
-    def __init__(self):
-        self.name = ""
-        self.type = ""
-        self.filename = ""
-        # TODO: Comments
+    def __init__(self, name, typee, filename, comments):
+        self.name = name
+        self.type = typee
+        self.filename = filename
+        self.c = comments
 
 class SteamFile:
     def __init__(self, name):
@@ -172,6 +172,7 @@ class SteamFile:
         self.structs = []  # Struct
         self.callbacks = [] # Struct
         self.interfaces = []  # Interface
+        self.typedefs = []  # Typedef
 
 class ParserState:
     def __init__(self, file):
@@ -189,7 +190,7 @@ class ParserState:
         self.packsize = None
         self.funcState = 0
         self.scopeDepth = 0
-        
+
         self.interface = None
         self.function = None
         self.enum = None
@@ -411,7 +412,7 @@ class Parser:
         if s.linesplit[0] != "typedef":
             return
 
-        self.consume_comments(s)
+        comments = self.consume_comments(s)
 
         # Skips typedefs in the Callback/CallResult classes
         if s.scopeDepth > 0:
@@ -431,15 +432,16 @@ class Parser:
                 print("Skipped typedef because it does not end with ';': " + s.line)
             return
 
-        typedef = Typedef()
-        typedef.name = s.linesplit[-1].rstrip(";")
-        typedef.type = " ".join(s.linesplit[1:-1])
-        if typedef.name.startswith("*"):
-            typedef.type += " *"
-            typedef.name = typedef.name[1:]
-        typedef.filename = s.f.name
+        name = s.linesplit[-1].rstrip(";")
+        typee = " ".join(s.linesplit[1:-1])
+        if name.startswith("*"):
+            typee += " *"
+            name = name[1:]
+
+        typedef = Typedef(name, typee, s.f.name, comments)
 
         self.typedefs.append(typedef)
+        s.f.typedefs.append(typedef)
 
 
     def parse_constants(self, s):
