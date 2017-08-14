@@ -49,11 +49,15 @@ g_ArgAttribs = (
 )
 
 g_GameServerInterfaces = (
-    'isteamhttp.h',
-    'isteaminventory.h',
-    'isteamnetworking.h',
-    'isteamugc.h',
+    'isteamclient.h',
+    #'isteamgameserver.h',
     'isteamutils.h',
+    'isteamnetworking.h',
+    #'isteamgameserverstats.h',
+    'isteaminventory.h',
+    'isteamhttp.h',
+    'isteamugc.h',
+    'isteamapps.h',
 )
 
 
@@ -81,11 +85,11 @@ class ArgAttribute:
         self.value = value
 
 class Arg:
-    def __init__(self):
-        self.name = ""
-        self.type = ""
-        self.default = None
-        self.attribute = None  # ArgAttribute
+    def __init__(self, name="", type_="", default=None, attribute=None):
+        self.name = name
+        self.type = type_
+        self.default = default
+        self.attribute = attribute  # ArgAttribute
 
 class FunctionAttribute:
     def __init__(self):
