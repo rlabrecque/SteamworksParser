@@ -60,7 +60,6 @@ g_GameServerInterfaces = (
     'isteamapps.h',
 )
 
-
 class Settings:
     warn_utf8bom = False
     warn_includeguardname = False
@@ -670,155 +669,161 @@ class Parser:
             s.linesplit = s.linesplit[1:-1]
             private = True
 
-        if s.line.startswith("virtual") or s.function:
-            if '~' in s.line:  # Skip destructor
-                return
+        # Skip lines that don't start with virtual, except when we're currently parsing a function
+        if not s.line.startswith("virtual") and not s.function:
+            return
 
-            args = ""
-            attr = None
-            if s.function == None:
-                s.function = Function()
-                if len(s.ifstatements) > 1:
-                    s.function.ifstatements = s.ifstatements[-1]
-                s.function.comments = s.comments
-                s.function.linecomment = s.linecomment
-                s.function.private = private
-                s.function.attributes = s.functionAttributes
-                s.functionAttributes = []
-                self.consume_comments(s)
+        if '~' in s.line:  # Skip destructor
+            return
 
-            linesplit_iter = iter(enumerate(s.linesplit))
-            for i, token in linesplit_iter:
-                if s.funcState == 0:  # Return Value
-                    if token == "virtual":
+        args = ""
+        attr = None
+        if s.function == None:
+            s.function = Function()
+            if len(s.ifstatements) > 1:
+                s.function.ifstatements = s.ifstatements[-1]
+            s.function.comments = s.comments
+            s.function.linecomment = s.linecomment
+            s.function.private = private
+            s.function.attributes = s.functionAttributes
+            s.functionAttributes = []
+            self.consume_comments(s)
+
+        linesplit_iter = iter(enumerate(s.linesplit))
+        for i, token in linesplit_iter:
+            if s.funcState == 0:  # Return Value
+                if token == "virtual":
+                    continue
+
+                if token.startswith("*"):
+                    s.function.returntype += "*"
+                    token = token[1:]
+                    s.funcState = 1
+                elif "(" in token:
+                    s.function.returntype = s.function.returntype.strip()
+                    s.funcState = 1
+                else:
+                    s.function.returntype += token + " "
+                    continue
+
+            if s.funcState == 1:  # Method Name
+                s.function.name = token.split("(", 1)[0]
+
+                if token[-1] == ")":
+                    s.funcState = 3
+                elif token[-1] != "(":  # Like f(void arg )
+                    if Settings.warn_spacing:
+                        printWarning("Function is missing whitespace between the opening parentheses and first arg.", s)
+                    token = token.split("(")[1]
+                    s.funcState = 2
+                else:
+                    s.funcState = 2
+                    continue
+
+            if s.funcState == 2:  # Args
+                # Strip clang attributes
+                bIsAttrib = False
+                for a in g_ArgAttribs:
+                    if token.startswith(a):
+                        attr = ArgAttribute()
+                        bIsAttrib = True
+                        break
+                if bIsAttrib:
+                    attr.name = token[:token.index("(")]
+                    if token.endswith(")"):
+                        attr.value = token[token.index("(")+1:token.index(")")]
                         continue
+                    s.funcState = 4
+                    continue
 
-                    if token.startswith("*"):
-                        s.function.returntype += "*"
-                        token = token[1:]
-                        s.funcState = 1
-                    elif "(" in token:
-                        s.function.returntype = s.function.returntype.strip()
-                        s.funcState = 1
-                    else:
-                        s.function.returntype += token + " "
-                        continue
+                if token.startswith("**"):
+                    args += token[:2]
+                    token = token[2:]
+                elif token.startswith("*") or token.startswith("&"):
+                    args += token[0]
+                    token = token[1:]
 
-                if s.funcState == 1:  # Method Name
-                    s.function.name = token.split("(", 1)[0]
+                if len(token) == 0:
+                    continue
 
-                    if token[-1] == ")":
-                        s.funcState = 3
-                    elif token[-1] != "(":  # Like f(void arg )
-                        if Settings.warn_spacing:
-                            printWarning("Function is missing whitespace between the opening parentheses and first arg.", s)
-                        token = token.split("(")[1]
-                        s.funcState = 2
-                    else:
-                        s.funcState = 2
-                        continue
-
-                if s.funcState == 2:  # Args
-                    # Strip clang attributes
-                    bIsAttrib = False
-                    for a in g_ArgAttribs:
-                        if token.startswith(a):
-                            attr = ArgAttribute()
-                            bIsAttrib = True
-                            break
-                    if bIsAttrib:
-                        attr.name = token[:token.index("(")]
-                        if token.endswith(")"):
-                            attr.value = token[token.index("(")+1:token.index(")")]
-                            continue
-                        s.funcState = 4
-                        continue
-
-                    if token.startswith("**"):
-                        args += token[:2]
-                        token = token[2:]
-                    elif token.startswith("*") or token.startswith("&"):
-                        args += token[0]
-                        token = token[1:]
-
-                    if token.startswith(")"):  # Like f( void arg ")"
-                        if args:
-                            TEST = 1
-                            TEST2 = 0  # TODO: Cleanup, I don't even know what the fuck is going on here anymore.
-                            if "**" in s.linesplit[i-1]:
-                                TEST -= 2
-                                TEST2 += 2
-                            elif "*" in s.linesplit[i-1] or "&" in s.linesplit[i-1]:
-                                TEST -= 1
-                                TEST2 += 1
-
-                            arg = Arg()
-                            arg.type = args[:-len(s.linesplit[i-1]) - TEST].strip()
-                            arg.name = s.linesplit[i-1][TEST2:]
-                            arg.attribute = attr
-                            s.function.args.append(arg)
-                            args = ""
-                            attr = None
-                        s.funcState = 3
-                    elif token.endswith(")"):  # Like f( void "arg)"
-                        if Settings.warn_spacing:
-                            printWarning("Function is missing whitespace between the closing parentheses and first arg.", s)
-
-                        arg = Arg()
-                        arg.type = args.strip()
-                        arg.name = token[:-1]
-                        arg.attribute = attr
-                        s.function.args.append(arg)
-                        args = ""
-                        attr = None
-                        s.funcState = 3
-                    elif token[-1] == ",":  # Like f( void "arg," void arg2 )
-                        TEST2 = 0
-                        if "*" in token[:-1] or "&" in token[:-1]:
-                            TEST2 += 1
-
-                        arg = Arg()
-                        arg.type = args.strip()
-                        arg.name = token[:-1][TEST2:]
-                        arg.attribute = attr
-                        s.function.args.append(arg)
-                        args = ""
-                        attr = None
-                    elif token == "=":
-                        # Copied from ")" above
+                if token.startswith(")"):  # Like f( void arg ")"
+                    if args:
                         TEST = 1
                         TEST2 = 0  # TODO: Cleanup, I don't even know what the fuck is going on here anymore.
-                        if "*" in s.linesplit[i-1] or "&" in s.linesplit[i-1]:
+                        if "**" in s.linesplit[i-1]:
+                            TEST -= 2
+                            TEST2 += 2
+                        elif "*" in s.linesplit[i-1] or "&" in s.linesplit[i-1]:
                             TEST -= 1
                             TEST2 += 1
 
                         arg = Arg()
                         arg.type = args[:-len(s.linesplit[i-1]) - TEST].strip()
                         arg.name = s.linesplit[i-1][TEST2:]
-                        arg.default = s.linesplit[i+1].rstrip(",")
                         arg.attribute = attr
                         s.function.args.append(arg)
                         args = ""
                         attr = None
-                        next(linesplit_iter, None)
-                    else:
-                        args += token + " "
+                    s.funcState = 3
+                elif token.endswith(")"):  # Like f( void "arg)"
+                    if Settings.warn_spacing:
+                        printWarning("Function is missing whitespace between the closing parentheses and first arg.", s)
 
-                    continue
+                    arg = Arg()
+                    arg.type = args.strip()
+                    arg.name = token[:-1]
+                    arg.attribute = attr
+                    s.function.args.append(arg)
+                    args = ""
+                    attr = None
+                    s.funcState = 3
+                elif token[-1] == ",":  # Like f( void "arg," void arg2 )
+                    TEST2 = 0
+                    if "*" in token[:-1] or "&" in token[:-1]:
+                        TEST2 += 1
 
-                if s.funcState == 3:  # = 0; or line
-                    if token.endswith(";"):
-                        s.funcState = 0
-                        s.interface.functions.append(s.function)
-                        s.function = None
-                        break
-                    continue
+                    arg = Arg()
+                    arg.type = args.strip()
+                    arg.name = token[:-1][TEST2:]
+                    arg.attribute = attr
+                    s.function.args.append(arg)
+                    args = ""
+                    attr = None
+                elif token == "=":
+                    # Copied from ")" above
+                    TEST = 1
+                    TEST2 = 0  # TODO: Cleanup, I don't even know what the fuck is going on here anymore.
+                    if "*" in s.linesplit[i-1] or "&" in s.linesplit[i-1]:
+                        TEST -= 1
+                        TEST2 += 1
 
-                if s.funcState == 4:  # ATTRIBS
-                    attr.value += token.rstrip(")")
-                    if token.endswith(")"):
-                        s.funcState = 2
-                    continue
+                    arg = Arg()
+                    arg.type = args[:-len(s.linesplit[i-1]) - TEST].strip()
+                    arg.name = s.linesplit[i-1][TEST2:]
+                    arg.default = s.linesplit[i+1].rstrip(",")
+                    arg.attribute = attr
+                    s.function.args.append(arg)
+                    args = ""
+                    attr = None
+                    next(linesplit_iter, None)
+                else:
+                    args += token + " "
+
+                continue
+
+            if s.funcState == 3:  # = 0; or line
+                if token.endswith(";"):
+                    s.funcState = 0
+                    s.interface.functions.append(s.function)
+                    s.function = None
+                    break
+                continue
+
+            if s.funcState == 4:  # ATTRIBS
+                attr.value += token.rstrip(")")
+                if token.endswith(")"):
+                    s.funcState = 2
+                continue
 
     def parse_classes(self, s):
         if s.linesplit[0] != "class":
