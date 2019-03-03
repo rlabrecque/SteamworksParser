@@ -13,39 +13,45 @@ g_SkippedFiles = (
 )
 
 g_SkippedLines = (
-    #isteamclient.h
-    "#define END_CALLBACK_INTERNAL_END()",
-    "#define END_DEFINE_CALLBACK_0()",
-    "SteamCallback_t",
-
     # steamtypes.h
-    "CLANG_ATTR",
+    "STEAM_CLANG_ATTR",
+
+    # steamclientpublic.h
+    "BIsOculusHMD",
+    "BIsWindowsMRHeadset",
+    "BIsHuaweiHeadset",
+    "BIsViveHMD",
 
     # Multiple
     "public:",
     "private:",
     "protected:",
     "_STEAM_CALLBACK_",
+    "#define STEAM_CALLBACK_BEGIN",
+    "#define STEAM_CALLBACK_END",
+    "#define STEAM_CALLBACK_MEMBER",
+    "STEAM_DEFINE_INTERFACE_ACCESSOR",
+    "inline"
 )
 
 g_FuncAttribs = (
-    "METHOD_DESC",
-    "IGNOREATTR",
-    "CALL_RESULT",
-    "CALL_BACK",
+    "STEAM_METHOD_DESC",
+    "STEAM_IGNOREATTR",
+    "STEAM_CALL_RESULT",
+    "STEAM_CALL_BACK",
 )
 
 g_ArgAttribs = (
-    "ARRAY_COUNT",
-    "ARRAY_COUNT_D",
-    "BUFFER_COUNT",
-    "DESC",
-    "OUT_ARRAY_CALL",
-    "OUT_ARRAY_COUNT",
-    "OUT_BUFFER_COUNT",
-    "OUT_STRING",
-    "OUT_STRING_COUNT",
-    "OUT_STRUCT",
+    "STEAM_ARRAY_COUNT",
+    "STEAM_ARRAY_COUNT_D",
+    "STEAM_BUFFER_COUNT",
+    "STEAM_DESC",
+    "STEAM_OUT_ARRAY_CALL",
+    "STEAM_OUT_ARRAY_COUNT",
+    "STEAM_OUT_BUFFER_COUNT",
+    "STEAM_OUT_STRING",
+    "STEAM_OUT_STRING_COUNT",
+    "STEAM_OUT_STRUCT",
 )
 
 g_GameServerInterfaces = (
@@ -613,11 +619,11 @@ class Parser:
     def parse_callbackmacros(self, s):
         if s.callbackmacro:
             comments = self.consume_comments(s)
-            if s.line.startswith("END_DEFINE_CALLBACK_"):
+            if s.line.startswith("STEAM_CALLBACK_END("):
                 s.f.callbacks.append(s.callbackmacro)
                 s.callbackmacro = None
-            elif s.line.startswith("CALLBACK_MEMBER"):
-                result = re.match("^CALLBACK_MEMBER\(.*,\s+(.*?)\s*,\s*(\w*)\[?(\d+)?\]?\s*\)", s.line)
+            elif s.line.startswith("STEAM_CALLBACK_MEMBER"):
+                result = re.match("^STEAM_CALLBACK_MEMBER\(.*,\s+(.*?)\s*,\s*(\w*)\[?(\d+)?\]?\s*\)", s.line)
 
                 fieldtype = result.group(1)
                 fieldname = result.group(2)
@@ -629,12 +635,12 @@ class Parser:
 
             return
 
-        if not s.line.startswith("DEFINE_CALLBACK"):
+        if not s.line.startswith("STEAM_CALLBACK_BEGIN"):
             return
 
         comments = self.consume_comments(s)
 
-        result = re.match("^DEFINE_CALLBACK\(\s?(\w+),\s?(.*?)\s*\)", s.line)
+        result = re.match("^STEAM_CALLBACK_BEGIN\(\s?(\w+),\s?(.*?)\s*\)", s.line)
 
         s.callbackmacro = Struct(result.group(1), s.packsize, comments)
         s.callbackmacro.callbackid = result.group(2)
