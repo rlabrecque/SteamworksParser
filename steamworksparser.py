@@ -5,11 +5,18 @@ import re
 
 g_SkippedFiles = (
     "isteammasterserverupdater.h", # Empty
-    "steam_api_flat.h", # Their autogen
+    "steam_api_flat.h", # Valve's C API
 
     # PS3-only Headers not currently supported
     "isteamps3overlayrenderer.h",
     "steamps3params.h",
+
+    # SteamNetworkingSockets is currently unsupported.
+    "steamnetworkingtypes.h",
+    "isteamnetworkingsockets.h",
+    "isteamnetworkingutils.h",
+    "steamdatagram_ticketgen.h",
+    "steamdatagram_tickets.h",
 )
 
 g_SkippedLines = (
