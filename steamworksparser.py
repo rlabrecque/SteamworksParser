@@ -742,10 +742,14 @@ class Parser:
                         bIsAttrib = True
                         break
                 if bIsAttrib:
-                    attr.name = token[:token.index("(")]
-                    if token.endswith(")"):
-                        attr.value = token[token.index("(")+1:token.index(")")]
-                        continue
+                    openparen_index = token.index("(")
+                    attr.name = token[:openparen_index]
+                    if len(token) > openparen_index+1:
+                        if token.endswith(")"):
+                            attr.value = token[openparen_index+1:-1]
+                            continue
+                        else:
+                            attr.value = token[openparen_index+1:]
                     s.funcState = 4
                     continue
 
@@ -833,9 +837,11 @@ class Parser:
                 continue
 
             if s.funcState == 4:  # ATTRIBS
-                attr.value += token.rstrip(")")
                 if token.endswith(")"):
+                    attr.value += token[:-1]
                     s.funcState = 2
+                else:
+                    attr.value += token
                 continue
 
     def parse_classes(self, s):
