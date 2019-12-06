@@ -13,6 +13,7 @@ g_SkippedFiles = (
 
     # SteamNetworkingSockets is currently unsupported.
     "steamnetworkingtypes.h",
+    "steamnetworkingsockets.h",
     "isteamnetworkingsockets.h",
     "isteamnetworkingutils.h",
     "steamdatagram_ticketgen.h",
