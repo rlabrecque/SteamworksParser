@@ -13,7 +13,6 @@ g_SkippedFiles = (
 
     # SteamNetworkingSockets is currently unsupported.
     "steamnetworkingtypes.h",
-    "steamnetworkingsockets.h",
     "isteamnetworkingsockets.h",
     "isteamnetworkingutils.h",
     "steamdatagram_ticketgen.h",
@@ -47,6 +46,7 @@ g_FuncAttribs = (
     "STEAM_IGNOREATTR",
     "STEAM_CALL_RESULT",
     "STEAM_CALL_BACK",
+    "STEAM_FLAT_NAME",
 )
 
 g_ArgAttribs = (
