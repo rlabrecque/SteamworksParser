@@ -11,8 +11,6 @@ g_SkippedFiles = (
     "isteamps3overlayrenderer.h",
     "steamps3params.h",
 
-    # SteamNetworkingSockets is currently unsupported.
-    "steamnetworkingtypes.h",
     "isteamnetworkingsockets.h",
     "isteamnetworkingutils.h",
     "steamdatagram_ticketgen.h",
@@ -38,7 +36,23 @@ g_SkippedLines = (
     "#define STEAM_CALLBACK_END",
     "#define STEAM_CALLBACK_MEMBER",
     "STEAM_DEFINE_INTERFACE_ACCESSOR",
-    "inline"
+    "inline",
+
+    # steamnetworkingtypes.h
+    "STEAMNETWORKINGSOCKETS_STEAM",
+    "STEAMNETWORKINGSOCKETS_INTERFACE",
+    #"STEAMNETWORKINGSOCKETS_STATIC_LINK",
+    "STEAMNETWORKINGSOCKETS_STEAMCLIENT",
+    "STEAMNETWORKINGSOCKETS_ENABLE_SDR",
+    "STEAMNETWORKINGSOCKETS_ENABLE_P2P",
+)
+
+g_SkippedStructs = (
+    # steamnetworkingtypes.h
+    "SteamNetworkingIPAddr",
+    "SteamNetworkingIdentity",
+    "SteamNetworkingMessage_t",
+    "SteamNetworkingConfigValue_t",
 )
 
 g_FuncAttribs = (
@@ -204,7 +218,7 @@ class ParserState:
         self.rawlinecomment = None
         self.linecomment = None
         self.ifstatements = []
-        self.packsize = None
+        self.packsize = []
         self.funcState = 0
         self.scopeDepth = 0
 
@@ -357,6 +371,20 @@ class Parser:
             s.bInHeader = False
 
     def parse_skippedlines(self, s):
+        if s.struct and s.struct.name in g_SkippedStructs:
+            self.parse_scope(s)
+            if s.line == "};":
+                if s.scopeDepth == 0:
+                    s.struct = None
+            return True
+
+        if "!defined(API_GEN)" in s.ifstatements:
+            if s.line.startswith("#if"):
+                s.ifstatements.append("ugh")
+            elif s.line.startswith("#endif"):
+                s.ifstatements.pop()
+            return True
+
         if s.line.endswith("\\"):
             s.bInMultilineMacro = True
             return True
@@ -407,10 +435,11 @@ class Parser:
             elif Settings.print_unuseddefines:
                 print("Unused Define: " + s.line)
         elif s.line.startswith("#pragma pack"):
-            if s.linesplit[2] == "push,":
-                s.packsize = int(s.linesplit[3])
-            elif s.linesplit[2] == "pop":
-                s.packsize = None
+            if "push" in s.line:
+                tmpline = s.line[s.line.index(",")+1:-1].strip()
+                s.packsize.append(int(tmpline))
+            elif "pop" in s.line:
+                s.packsize.pop
         elif s.line.startswith("#pragma"):
             pass
         elif s.line.startswith("#error"):
@@ -591,6 +620,10 @@ class Parser:
             return
 
         if s.linesplit[0] != "struct":
+            return
+
+        # Skip Forward Declares
+        if s.linesplit[1].endswith(";"):
             return
 
         comments = self.consume_comments(s)
