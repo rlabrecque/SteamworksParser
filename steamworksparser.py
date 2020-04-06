@@ -12,8 +12,6 @@ g_SkippedFiles = (
     "steamps3params.h",
 
     "isteamnetworkingsockets.h",
-    "isteamnetworkingutils.h",
-    "steamdatagram_ticketgen.h",
     "steamdatagram_tickets.h",
 )
 
@@ -39,12 +37,7 @@ g_SkippedLines = (
     "inline",
 
     # steamnetworkingtypes.h
-    "STEAMNETWORKINGSOCKETS_STEAM",
     "STEAMNETWORKINGSOCKETS_INTERFACE",
-    #"STEAMNETWORKINGSOCKETS_STATIC_LINK",
-    "STEAMNETWORKINGSOCKETS_STEAMCLIENT",
-    "STEAMNETWORKINGSOCKETS_ENABLE_SDR",
-    "STEAMNETWORKINGSOCKETS_ENABLE_P2P",
 )
 
 g_SkippedStructs = (
