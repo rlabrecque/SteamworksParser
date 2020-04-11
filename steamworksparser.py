@@ -77,6 +77,8 @@ g_GameServerInterfaces = (
     'isteamhttp.h',
     'isteamugc.h',
     'isteamapps.h',
+    'isteamnetworkingutils.h',
+    'isteamnetworkingsockets.h',
 )
 
 class Settings:
