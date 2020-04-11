@@ -10,9 +10,6 @@ g_SkippedFiles = (
     # PS3-only Headers not currently supported
     "isteamps3overlayrenderer.h",
     "steamps3params.h",
-
-    "isteamnetworkingsockets.h",
-    "steamdatagram_tickets.h",
 )
 
 g_SkippedLines = (
@@ -35,9 +32,6 @@ g_SkippedLines = (
     "#define STEAM_CALLBACK_MEMBER",
     "STEAM_DEFINE_INTERFACE_ACCESSOR",
     "inline",
-
-    # steamnetworkingtypes.h
-    "STEAMNETWORKINGSOCKETS_INTERFACE",
 )
 
 g_SkippedStructs = (
@@ -46,6 +40,10 @@ g_SkippedStructs = (
     "SteamNetworkingIdentity",
     "SteamNetworkingMessage_t",
     "SteamNetworkingConfigValue_t",
+
+    # steamdatagram_tickets.h
+    "SteamDatagramHostedAddress",
+    "SteamDatagramRelayAuthTicket",
 )
 
 g_FuncAttribs = (
