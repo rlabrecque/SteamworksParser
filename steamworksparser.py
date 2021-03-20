@@ -10,6 +10,9 @@ g_SkippedFiles = (
     # PS3-only Headers not currently supported
     "isteamps3overlayrenderer.h",
     "steamps3params.h",
+
+    # Deprecated, moved to isteaminput.h
+    "isteamcontroller.h",
 )
 
 g_SkippedLines = (
