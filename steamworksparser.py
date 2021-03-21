@@ -34,7 +34,6 @@ g_SkippedLines = (
     "#define STEAM_CALLBACK_END",
     "#define STEAM_CALLBACK_MEMBER",
     "STEAM_DEFINE_INTERFACE_ACCESSOR",
-    "inline",
 )
 
 g_SkippedStructs = (
@@ -393,6 +392,9 @@ class Parser:
             if skip in s.line:
                 return True
 
+        if not s.interface and 'inline' in s.line:
+            return True
+
         return False
 
     def parse_preprocessor(self, s):
@@ -713,7 +715,7 @@ class Parser:
             private = True
 
         # Skip lines that don't start with virtual, except when we're currently parsing a function
-        if not s.line.startswith("virtual") and not s.function:
+        if not s.function and not (s.line.startswith("virtual") or s.line.startswith("inline")):
             return
 
         if '~' in s.line:  # Skip destructor
@@ -735,7 +737,7 @@ class Parser:
         linesplit_iter = iter(enumerate(s.linesplit))
         for i, token in linesplit_iter:
             if s.funcState == 0:  # Return Value
-                if token == "virtual":
+                if token == "virtual" or token == "inline":
                     continue
 
                 if token.startswith("*"):
@@ -754,6 +756,11 @@ class Parser:
 
                 if token[-1] == ")":
                     s.funcState = 3
+                elif token[-1] == ";":
+                    s.funcState = 0
+                    s.interface.functions.append(s.function)
+                    s.function = None
+                    break
                 elif token[-1] != "(":  # Like f(void arg )
                     if Settings.warn_spacing:
                         printWarning("Function is missing whitespace between the opening parentheses and first arg.", s)
