@@ -4,7 +4,6 @@ import copy
 import re
 
 g_SkippedFiles = (
-    "isteammasterserverupdater.h", # Empty
     "steam_api_flat.h", # Valve's C API
 
     # PS3-only Headers not currently supported
@@ -18,12 +17,7 @@ g_SkippedFiles = (
 g_SkippedLines = (
     # steamtypes.h
     "STEAM_CLANG_ATTR",
-
-    # steamclientpublic.h
-    "BIsOculusHMD",
-    "BIsWindowsMRHeadset",
-    "BIsHuaweiHeadset",
-    "BIsViveHMD",
+    "#define VALVE_BIG_ENDIAN",
 
     # Multiple
     "public:",
@@ -78,7 +72,6 @@ g_GameServerInterfaces = (
     'isteaminventory.h',
     'isteamhttp.h',
     'isteamugc.h',
-    'isteamapps.h',
     'isteamnetworkingutils.h',
     'isteamnetworkingsockets.h',
 )
@@ -127,7 +120,7 @@ class Function:
         self.comments = []
         self.linecomment = ""
         self.attributes = []  # FunctionAttribute
-        self.private = False;
+        self.private = False
 
 class Interface:
     def __init__(self):
@@ -226,6 +219,7 @@ class ParserState:
         self.bInHeader = True
         self.bInMultilineComment = False
         self.bInMultilineMacro = False
+        self.bInPrivate = False
         self.callbackid = None
         self.functionAttributes = [] # FunctionAttribute
 
@@ -293,6 +287,9 @@ class Parser:
             self.parse_structs(s)
             self.parse_callbackmacros(s)
             self.parse_interfaces(s)
+            if not s.line:
+                continue
+
             self.parse_classes(s)
             self.parse_scope(s)
 
@@ -708,11 +705,18 @@ class Parser:
     def parse_interface_functions(self, s):
         self.parse_interface_function_atrributes(s)
 
-        private = False
         if s.line.startswith("STEAM_PRIVATE_API"):
-            s.line = s.line[s.line.index("(")+1:s.line.rindex(")")].strip()
-            s.linesplit = s.linesplit[1:-1]
-            private = True
+            s.bInPrivate = True
+            s.line = s.line[s.line.index("(")+1:].strip()
+            s.linesplit = s.linesplit[1:]
+
+        bInPrivate = s.bInPrivate
+        if s.bInPrivate:
+            if s.line.endswith(")"):
+                s.bInPrivate = False
+                s.line = s.line[:-1].strip()
+                s.linesplit = s.linesplit[:-1]
+
 
         # Skip lines that don't start with virtual, except when we're currently parsing a function
         if not s.function and not (s.line.startswith("virtual") or s.line.startswith("inline")):
@@ -729,7 +733,7 @@ class Parser:
                 s.function.ifstatements = s.ifstatements[-1]
             s.function.comments = s.comments
             s.function.linecomment = s.linecomment
-            s.function.private = private
+            s.function.private = bInPrivate
             s.function.attributes = s.functionAttributes
             s.functionAttributes = []
             self.consume_comments(s)
