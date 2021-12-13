@@ -541,9 +541,12 @@ class Parser:
                 return
 
             if s.struct:
-                result = re.match("^enum { k_iCallback = (.*) };", s.line)
-                s.callbackid = result.group(1)
-                return
+                result = re.match("^enum { (.*) = (.*) };", s.line)
+                name = result.group(1)
+
+                if name == "k_iCallback":
+                    s.callbackid = result.group(2)
+                    return
 
             constant = Constant(s.linesplit[2], s.linesplit[4], "int", comments);
             s.f.constants.append(constant)
