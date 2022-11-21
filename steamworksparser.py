@@ -12,6 +12,9 @@ g_SkippedFiles = (
 
     # Deprecated, moved to isteaminput.h
     "isteamcontroller.h",
+
+    # Non-steam code
+    "isteamdualsense.h",
 )
 
 g_SkippedLines = (
