@@ -492,7 +492,7 @@ class Parser:
         if s.linesplit[0] != "const" and not s.line.startswith("static const"):
             return
 
-        if s.scopeDepth != 0:
+        if s.scopeDepth > 1:
             return
 
         comments = self.consume_comments(s)
@@ -504,6 +504,9 @@ class Parser:
             return
 
         result = re.match(".*const\s+(.*)\s+(\w+)\s+=\s+(.*);$", s.line)
+
+        if not result:
+            return
 
         constant = Constant(result.group(2), result.group(3), result.group(1), comments);
         s.f.constants.append(constant)
@@ -645,7 +648,7 @@ class Parser:
             return
 
         fieldarraysize = None
-        result = re.match("^(.*\s\**)(\w+);$", s.line)
+        result = re.match("^([^=.]*\s\**)(\w+);$", s.line)
         if result is None:
             result = re.match("^(.*\s\*?)(\w+)\[\s*(\w+)?\s*\];$", s.line)
             if result is None:
