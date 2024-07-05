@@ -69,14 +69,15 @@ g_ArgAttribs = (
 g_GameServerInterfaces = (
     'isteamclient.h',
     #'isteamgameserver.h',
-    'isteamutils.h',
-    'isteamnetworking.h',
     #'isteamgameserverstats.h',
-    'isteaminventory.h',
     'isteamhttp.h',
-    'isteamugc.h',
-    'isteamnetworkingutils.h',
+    'isteaminventory.h',
+    'isteamnetworking.h',
+    'isteamnetworkingmessages.h',
     'isteamnetworkingsockets.h',
+    'isteamnetworkingutils.h',
+    'isteamugc.h',
+    'isteamutils.h',
 )
 
 class Settings:
