@@ -80,6 +80,18 @@ g_GameServerInterfaces = (
     'isteamutils.h',
 )
 
+g_TypeNames = {
+    'bool':         'bool',
+    'const char *': 'string',
+    'double *':     'doublePtr',
+    'float *':      'floatPtr',
+    'float':        'float',
+    'int32 *':      'int32Ptr',
+    'int32':        'int32',
+    'int64 *':      'int64Ptr',
+    'int64':        'int64'
+}
+
 class Settings:
     warn_utf8bom = False
     warn_includeguardname = False
@@ -118,6 +130,7 @@ class FunctionAttribute:
 class Function:
     def __init__(self):
         self.name = ""
+        self.originalName = "" # name before overload correction
         self.returntype = ""
         self.args = []  # Arg
         self.ifstatements = []
@@ -129,7 +142,7 @@ class Function:
 class Interface:
     def __init__(self):
         self.name = ""
-        self.functions = []  # Function
+        self.functions = {}  # Function
         self.c = None  # Comment
 
 class Define:
@@ -775,7 +788,7 @@ class Parser:
                     continue
 
             if s.funcState == 1:  # Method Name
-                s.function.name = token.split("(", 1)[0]
+                s.function.originalName = s.function.name = token.split("(", 1)[0]
 
                 if token[-1] == ")":
                     s.funcState = 3
@@ -891,7 +904,24 @@ class Parser:
             if s.funcState == 3:  # = 0; or line
                 if token.endswith(";"):
                     s.funcState = 0
-                    s.interface.functions.append(s.function)
+
+                    prevDecl = s.interface.functions.get(s.function.name)
+                    # if function with same name already exists, find the
+                    # different typed argument in order to rename accordingly
+                    if prevDecl != None:
+                        t1 = None
+                        t2 = None
+                        for i, arg in enumerate(s.function.args):
+                            t1 = arg.type
+                            t2 = prevDecl.args[i].type
+                            if t1 != t2:
+                                break
+                        prevDecl.name = s.function.name + '_' + g_TypeNames[t2]
+                        s.function.name = s.function.name + '_' + g_TypeNames[t1]
+
+                        s.interface.functions[prevDecl.name] = prevDecl
+
+                    s.interface.functions[s.function.name] = s.function
                     s.function = None
                     break
                 continue
