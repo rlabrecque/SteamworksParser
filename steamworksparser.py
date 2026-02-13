@@ -168,6 +168,7 @@ class Struct:
         self.c = comments  # Comment
         self.fields = []  # StructField
         self.callbackid = None
+        self.asyncMarkerInterfaceName = None # string if self is callback
         self.endcomments = None  # Comment
 
 class StructField:
